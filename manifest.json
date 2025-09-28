@@ -21,7 +21,6 @@
     {
       "matches": [
         "*://*.youtube.com/*",
-        "*://*.twitter.com/*",
         "*://*.facebook.com/*",
         "*://*.instagram.com/*",
         "*://*.tiktok.com/*"
