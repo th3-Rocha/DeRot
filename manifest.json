@@ -21,16 +21,22 @@
     {
       "matches": [
         "*://*.youtube.com/*",
-        "*://*.facebook.com/*",
+        "*://x.com/*",
         "*://*.instagram.com/*",
         "*://*.tiktok.com/*"
       ],
       "js": ["src/content.ts"]
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["public/audio/sounds/*.mp3"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "icons": {
-    "16": "public/icon16.png",
-    "48": "public/icon48.png",
-    "128": "public/icon128.png"
+    "16": "public/vite.svg",
+    "48": "public/vite.svg",
+    "128": "public/vite.svg"
   }
 }
