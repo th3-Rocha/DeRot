@@ -30,7 +30,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["public/audio/sounds/*.mp3"],
+      "resources": ["public/audio/sounds/*.mp3", "public/images/emotes/*.webp"],
       "matches": ["<all_urls>"]
     }
   ],

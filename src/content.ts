@@ -1,3 +1,4 @@
+import { EMOTES_PATH } from "./consts/emotes";
 import { SOUNDS_PATHS } from "./consts/sounds";
 
 const emojiSpamState = {
@@ -6,7 +7,7 @@ const emojiSpamState = {
   lastEmojiTime: 0,
   interval: 300,
   lastAudioTime: 0,
-  audioInterval: 10000,
+  audioInterval: 5000,
 };
 
 function playRandomSound() {
@@ -21,36 +22,35 @@ function playRandomSound() {
 }
 
 function createEmoji() {
-  const emoji = document.createElement("span");
-  emoji.innerText = ["🧠🔥", "🚨", "🛑", "📉", "⏳"].at(
-    Math.floor(Math.random() * 5)
-  )!;
+  const emoji = document.createElement("img");
+  const randomEmote =
+    EMOTES_PATH[Math.floor(Math.random() * EMOTES_PATH.length)];
+  const emoteUrl = chrome.runtime.getURL(randomEmote);
+
+  emoji.src = emoteUrl;
   emoji.style.position = "fixed";
   emoji.style.left = `${Math.random() * 90}vw`;
   emoji.style.top = `${Math.random() * 90}vh`;
-  emoji.style.fontSize = `${20 + Math.random() * 30}px`;
-  emoji.style.opacity = "0";
+  emoji.style.width = `${150 + Math.random() * 200}px`;
+  emoji.style.opacity = "1";
   emoji.style.zIndex = "99999";
   emoji.style.pointerEvents = "none";
   emoji.style.transition = "opacity 0.5s ease-out, transform 0.5s ease-out";
   emoji.style.transform = "scale(0.5)";
+  emoji.style.background = "white";
+  emoji.style.border = "none";
 
   document.body.appendChild(emoji);
 
-  console.log("Emoji criado:", emoji.innerText);
-
   setTimeout(() => {
-    emoji.style.opacity = "1";
     emoji.style.transform = "scale(1)";
   }, 50);
 
   setTimeout(() => {
-    emoji.style.opacity = "0";
     emoji.style.transform = "scale(0.5)";
     setTimeout(() => emoji.remove(), 500);
   }, 1500);
 }
-
 function animationLoop(timestamp: number) {
   if (!emojiSpamState.isActive) return;
 
