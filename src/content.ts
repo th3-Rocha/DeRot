@@ -8,9 +8,13 @@ const emojiSpamState = {
   interval: 300,
   lastAudioTime: 0,
   audioInterval: 5000,
+  showEmojis: true,
+  playAudio: true,
 };
 
 function playRandomSound() {
+  if (!emojiSpamState.playAudio) return;
+
   const soundFile =
     SOUNDS_PATHS[Math.floor(Math.random() * SOUNDS_PATHS.length)];
   const soundUrl = chrome.runtime.getURL(`public/audio/${soundFile}`);
@@ -22,6 +26,8 @@ function playRandomSound() {
 }
 
 function createEmoji() {
+  if (!emojiSpamState.showEmojis) return;
+
   const emoji = document.createElement("img");
   const randomEmote =
     EMOTES_PATH[Math.floor(Math.random() * EMOTES_PATH.length)];
@@ -37,7 +43,7 @@ function createEmoji() {
   emoji.style.pointerEvents = "none";
   emoji.style.transition = "opacity 0.5s ease-out, transform 0.5s ease-out";
   emoji.style.transform = "scale(0.5)";
-  emoji.style.background = "white";
+  emoji.style.background = "none";
   emoji.style.border = "none";
 
   document.body.appendChild(emoji);
@@ -67,10 +73,25 @@ function animationLoop(timestamp: number) {
   emojiSpamState.animationFrameId = requestAnimationFrame(animationLoop);
 }
 
-function startEmojiSpam() {
+function startEmojiSpam(settings?: {
+  showEmojis?: boolean;
+  playAudio?: boolean;
+}) {
   if (emojiSpamState.isActive) return;
 
-  console.log("Recebido comando START_SPAM. Ativando emojis.");
+  if (settings) {
+    emojiSpamState.showEmojis = settings.showEmojis !== false;
+    emojiSpamState.playAudio = settings.playAudio !== false;
+  }
+
+  console.log(
+    "Recebido comando START_SPAM. Ativando emojis com configurações:",
+    {
+      showEmojis: emojiSpamState.showEmojis,
+      playAudio: emojiSpamState.playAudio,
+    }
+  );
+
   emojiSpamState.isActive = true;
   emojiSpamState.animationFrameId = requestAnimationFrame(animationLoop);
 }
@@ -83,14 +104,14 @@ function stopEmojiSpam() {
   cancelAnimationFrame(emojiSpamState.animationFrameId);
 
   document
-    .querySelectorAll('span[style*="z-index: 99999"]')
+    .querySelectorAll('img[style*="z-index: 99999"]')
     .forEach((el) => el.remove());
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.command) {
     case "START_SPAM":
-      startEmojiSpam();
+      startEmojiSpam(message.settings);
       break;
     case "STOP_SPAM":
       stopEmojiSpam();

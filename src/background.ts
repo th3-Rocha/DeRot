@@ -3,6 +3,7 @@ import { isUrlRotPage } from "./lib/is-url-rot-page";
 let activeTabId: number | undefined;
 let sessionStartTime: number | undefined;
 let activeSessionHost: string | undefined;
+let spamTimeout: NodeJS.Timeout | undefined;
 
 interface SessionData {
   site: string;
@@ -11,7 +12,29 @@ interface SessionData {
   timeSpent: number;
 }
 
+interface SpamSettings {
+  delay: number;
+  showEmojis: boolean;
+  playAudio: boolean;
+}
+
+async function getSettings(): Promise<SpamSettings> {
+  const result = await chrome.storage.local.get("spamSettings");
+  return (
+    result.spamSettings || {
+      delay: 0,
+      showEmojis: true,
+      playAudio: true,
+    }
+  );
+}
+
 async function endAndSaveCurrentSession() {
+  if (spamTimeout) {
+    clearTimeout(spamTimeout);
+    spamTimeout = undefined;
+  }
+
   if (!sessionStartTime || !activeSessionHost) return;
 
   const sessionEndTime = Date.now();
@@ -52,18 +75,45 @@ async function endAndSaveCurrentSession() {
   activeSessionHost = undefined;
 }
 
+function startSpam(tabId: number, settings: SpamSettings) {
+  chrome.tabs
+    .sendMessage(tabId, {
+      command: "START_SPAM",
+      settings: {
+        showEmojis: settings.showEmojis,
+        playAudio: settings.playAudio,
+      },
+    })
+    .catch(() => {});
+  console.log(
+    `START_SPAM command sent to tab ${tabId} with settings:`,
+    settings
+  );
+}
+
 async function startNewSession(tabId: number, url: string) {
   await endAndSaveCurrentSession();
   activeTabId = tabId;
 
   if (isUrlRotPage(url)) {
-    chrome.tabs.sendMessage(tabId, { command: "START_SPAM" }).catch(() => {});
-    console.log(`START_SPAM command sent to tab ${tabId}`);
-
+    const settings = await getSettings();
     const urlObj = new URL(url);
     activeSessionHost = urlObj.hostname.replace("www.", "");
     sessionStartTime = Date.now();
     console.log(`Starting new session on ${activeSessionHost}`);
+
+    if (spamTimeout) {
+      clearTimeout(spamTimeout);
+    }
+
+    if (settings.delay > 0) {
+      console.log(`Spam will start in ${settings.delay} seconds`);
+      spamTimeout = setTimeout(() => {
+        startSpam(tabId, settings);
+      }, settings.delay * 1000);
+    } else {
+      startSpam(tabId, settings);
+    }
   } else {
     chrome.tabs.sendMessage(tabId, { command: "STOP_SPAM" }).catch(() => {});
     console.log(`STOP_SPAM command sent to tab ${tabId}`);
@@ -106,8 +156,19 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 });
 
 chrome.runtime.onSuspend.addListener(() => endAndSaveCurrentSession());
-chrome.runtime.onInstalled.addListener(() =>
-  console.log("DeRot Extension installed/updated.")
-);
+
+chrome.runtime.onMessage.addListener(async (message) => {
+  if (message.command === "SETTINGS_UPDATED" && activeTabId) {
+    await endAndSaveCurrentSession();
+    const tab = await chrome.tabs.get(activeTabId);
+    if (tab.url && isUrlRotPage(tab.url)) {
+      await startNewSession(activeTabId, tab.url);
+    }
+  }
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("DeRot Extension installed/updated.");
+});
 
 console.log("Background script started.");
