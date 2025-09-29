@@ -35,8 +35,6 @@
     }
   ],
   "icons": {
-    "16": "public/vite.svg",
-    "48": "public/vite.svg",
-    "128": "public/vite.svg"
+    "128": "public/brain-128.png"
   }
 }
