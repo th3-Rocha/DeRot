@@ -15,7 +15,38 @@ const emojiSpamState = {
   hasActiveModal: false, // Controlar se já existe um modal ativo
   correctAnswers: 0, // Acertos consecutivos para dificuldade
   difficultyLevel: 1, // Nível de dificuldade (1, 2, 3, 4+)
+  audioBackup: new Map<HTMLElement, number>(), // Backup dos volumes originais
 };
+
+// Função para mutar todos os elementos de audio/video da página
+function mutePageAudio() {
+  const audioElements = document.querySelectorAll("audio, video");
+
+  audioElements.forEach((element) => {
+    const audioElement = element as HTMLAudioElement | HTMLVideoElement;
+    // Armazenar volume original para restaurar depois
+    emojiSpamState.audioBackup.set(audioElement, audioElement.volume);
+    // Mutar o elemento
+    audioElement.volume = 0;
+    audioElement.muted = true;
+  });
+
+  console.log(`Muted ${audioElements.length} audio/video elements`);
+}
+
+// Função para restaurar o audio da página
+function unmutePageAudio() {
+  emojiSpamState.audioBackup.forEach((originalVolume, element) => {
+    const audioElement = element as HTMLAudioElement | HTMLVideoElement;
+    // Restaurar volume original
+    audioElement.volume = originalVolume;
+    audioElement.muted = false;
+  });
+
+  console.log(`Restored audio for ${emojiSpamState.audioBackup.size} elements`);
+  // Limpar o backup
+  emojiSpamState.audioBackup.clear();
+}
 
 function generateMathProblem(): { question: string; answer: number } {
   const level = emojiSpamState.difficultyLevel;
@@ -229,6 +260,10 @@ function createMathModal() {
   if (emojiSpamState.hasActiveModal) return;
 
   emojiSpamState.hasActiveModal = true;
+
+  // Mutar áudio da página quando modal abrir
+  mutePageAudio();
+
   const mathProblem = generateMathProblem();
   let timeLeft = 30;
 
@@ -334,6 +369,7 @@ function createMathModal() {
       feedback.style.color = "#ef4444";
       setTimeout(() => {
         emojiSpamState.hasActiveModal = false;
+        unmutePageAudio(); // Restaurar áudio da página
         overlay.remove();
         setTimeout(() => createMathModal(), 100);
       }, 1500);
@@ -364,6 +400,7 @@ function createMathModal() {
 
       setTimeout(() => {
         emojiSpamState.hasActiveModal = false;
+        unmutePageAudio(); // Restaurar áudio da página
         overlay.remove();
       }, 1500);
     } else {
@@ -470,6 +507,7 @@ function stopEmojiSpam() {
   emojiSpamState.hasActiveModal = false;
   emojiSpamState.correctAnswers = 0; // Reset acertos consecutivos
   emojiSpamState.difficultyLevel = 1; // Reset dificuldade
+  unmutePageAudio(); // Restaurar áudio da página
   cancelAnimationFrame(emojiSpamState.animationFrameId);
 
   document
