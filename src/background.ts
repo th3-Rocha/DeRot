@@ -14,8 +14,7 @@ interface SessionData {
 
 interface SpamSettings {
   delay: number;
-  showEmojis: boolean;
-  playAudio: boolean;
+  useMathChallenge: boolean;
 }
 
 async function getSettings(): Promise<SpamSettings> {
@@ -23,8 +22,7 @@ async function getSettings(): Promise<SpamSettings> {
   return (
     result.spamSettings || {
       delay: 0,
-      showEmojis: true,
-      playAudio: true,
+      useMathChallenge: true,
     }
   );
 }
@@ -80,8 +78,7 @@ function startSpam(tabId: number, settings: SpamSettings) {
     .sendMessage(tabId, {
       command: "START_SPAM",
       settings: {
-        showEmojis: settings.showEmojis,
-        playAudio: settings.playAudio,
+        useMathChallenge: settings.useMathChallenge,
       },
     })
     .catch(() => {});

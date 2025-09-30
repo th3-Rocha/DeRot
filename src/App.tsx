@@ -41,28 +41,30 @@ function ToggleSwitch({
 
 export default function App() {
   const [delay, setDelay] = useState<number>(10);
-  const [showEmojis, setShowEmojis] = useState<boolean>(true);
-  const [playAudio, setPlayAudio] = useState<boolean>(true);
+  const [useMathChallenge, setUseMathChallenge] = useState<boolean>(true);
   const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
     chrome.storage.local.get(["spamSettings"], (result) => {
       if (result.spamSettings) {
         setDelay(result.spamSettings.delay || 10);
-        setShowEmojis(result.spamSettings.showEmojis !== false);
-        setPlayAudio(result.spamSettings.playAudio !== false);
+        setUseMathChallenge(result.spamSettings.useMathChallenge !== false);
       }
     });
   }, []);
 
   const handleSave = async () => {
-    const newSettings = { delay, showEmojis, playAudio };
+    const newSettings = { delay, useMathChallenge };
     await chrome.storage.local.set({ spamSettings: newSettings });
 
     chrome.runtime.sendMessage({ command: "SETTINGS_UPDATED" });
 
     setStatus("Settings saved successfully!");
     setTimeout(() => setStatus(""), 2000);
+
+    // Restart the extension and reload the page
+    chrome.runtime.reload();
+    window.location.reload();
   };
 
   return (
@@ -72,7 +74,7 @@ export default function App() {
       </h1>
 
       <div className="flex flex-col gap-6 p-6 bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg shadow-xl">
-        <div className="flex flex-col gap-2">
+        {/* <div className="flex flex-col gap-2">
           <label htmlFor="delay" className="text-sm font-medium text-slate-300">
             Delay before starting spam (seconds):
           </label>
@@ -85,19 +87,12 @@ export default function App() {
             onChange={(e) => setDelay(Number(e.target.value))}
             className="w-full bg-slate-700 text-white border border-slate-600 rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
           />
-        </div>
-
+        </div> */}
         <ToggleSwitch
-          label="Show Emojis"
-          checked={showEmojis}
-          onChange={setShowEmojis}
-        />
-        <ToggleSwitch
-          label="Play Audio"
-          checked={playAudio}
-          onChange={setPlayAudio}
-        />
-
+          label={useMathChallenge ? "Math Challenge Mode" : "Emoji Spam Mode"}
+          checked={useMathChallenge}
+          onChange={setUseMathChallenge}
+        />{" "}
         <div className="mt-2">
           <button
             onClick={handleSave}
